@@ -1,18 +1,17 @@
-name: Auto Build and Release Deepseek-TUI Windows ARM64
+name: Auto Build and Release Deepseek-TUI Windows ARM64 (Linux cross-compile)
 
 on:
   schedule:
     - cron: '0 0 * * *'  # 每天 0 点运行
-  workflow_dispatch:     # 可手动触发
+  workflow_dispatch:     # 手动触发
 
 jobs:
   build-win-arm:
-    runs-on: windows-latest
+    runs-on: ubuntu-latest
     env:
       SRC_REPO: Hmbown/DeepSeek-TUI
       RELEASE_REPO: sakuraflows/deepseek-tui_winarm
       LLVM_VERSION: 22.1.6
-      SDK_VERSION: 10.0.22621.0
 
     steps:
     - name: Checkout self repo
@@ -29,19 +28,19 @@ jobs:
       run: rustup target add aarch64-pc-windows-msvc
 
     # ==========================
-    # 获取源项目最新 tag（PowerShell 兼容 Windows runner）
+    # 获取源项目最新 tag
     # ==========================
     - name: Get latest tag from source repo
       id: latest_tag
-      shell: pwsh
+      shell: bash
       run: |
         git init src
-        Set-Location src
-        git remote add origin https://github.com/${{ env.SRC_REPO }}.git
+        cd src
+        git remote add origin https://github.com/${SRC_REPO}.git
         git fetch --tags --quiet
-        $latest_tag = git tag --sort=-creatordate | Select-Object -First 1
-        Write-Host "Latest tag: $latest_tag"
-        echo "LATEST_TAG=$latest_tag" >> $env:GITHUB_ENV
+        LATEST_TAG=$(git tag --sort=-creatordate | head -n1)
+        echo "Latest tag: $LATEST_TAG"
+        echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
 
     # ==========================
     # 检查 release 是否已存在
@@ -72,38 +71,7 @@ jobs:
     # Checkout 源代码
     # ==========================
     - name: Checkout source repo at latest tag
-      run: git clone --branch $env:LATEST_TAG https://github.com/${{ env.SRC_REPO }}.git deepseek-tui
-      shell: pwsh
-
-    # ==========================
-    # 缓存 LLVM
-    # ==========================
-    - name: Cache LLVM
-      uses: actions/cache@v3
-      with:
-        path: llvm
-        key: llvm-${{ env.LLVM_VERSION }}
-
-    - name: Download LLVM prebuilt for Windows ARM64
-      if: steps.cache.outputs.cache-hit != 'true'
-      shell: pwsh
-      run: |
-        Invoke-WebRequest -Uri https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/clang+llvm-${{ env.LLVM_VERSION }}-aarch64-pc-windows-msvc.zip -OutFile llvm.zip
-        Expand-Archive llvm.zip -DestinationPath llvm
-
-    - name: Add LLVM to PATH
-      shell: pwsh
-      run: |
-        $LLVM_BIN = Resolve-Path "llvm\clang+llvm-${{ env.LLVM_VERSION }}-aarch64-pc-windows-msvc\bin"
-        echo "LLVM_PATH=$LLVM_BIN" >> $env:GITHUB_ENV
-        $env:PATH = "$LLVM_BIN;$env:PATH"
-
-    # ==========================
-    # Windows SDK 安装
-    # ==========================
-    - name: Install Windows 11 SDK
-      shell: powershell
-      run: choco install windows-sdk-10-version-22621-all -y
+      run: git clone --branch $LATEST_TAG https://github.com/${SRC_REPO}.git deepseek-tui
 
     # ==========================
     # 缓存 Rust/Cargo
@@ -118,22 +86,34 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     # ==========================
-    # 构建 exe
+    # 安装交叉编译工具链
+    # ==========================
+    - name: Install cross compile tools
+      run: |
+        sudo dpkg --add-architecture arm64
+        sudo apt update
+        sudo apt install -y gcc-aarch64-linux-gnu mingw-w64
+
+    # ==========================
+    # 构建 Windows ARM64 exe
     # ==========================
     - name: Build Deepseek-TUI exe
-      shell: pwsh
       run: |
-        Set-Location deepseek-tui
+        cd deepseek-tui
+        # 使用 MSVC 目标需要 x86_64-w64-mingw32 兼容或者交叉链配置
+        # 这里使用 Rust 内置 cross 编译
         cargo build --release --target aarch64-pc-windows-msvc
 
+    # ==========================
+    # 准备 artifacts
+    # ==========================
     - name: Prepare artifacts
-      shell: pwsh
       run: |
         mkdir release
-        Copy-Item deepseek-tui\target\aarch64-pc-windows-msvc\release\deepseek-tui.exe release\
+        cp deepseek-tui/target/aarch64-pc-windows-msvc/release/deepseek-tui.exe release/
 
     # ==========================
-    # 发布 release
+    # 创建 GitHub Release
     # ==========================
     - name: Create GitHub Release
       id: create_release

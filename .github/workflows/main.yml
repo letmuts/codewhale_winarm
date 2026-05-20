@@ -97,6 +97,8 @@ jobs:
     - name: Build Deepseek-TUI exe
       run: |
         cd deepseek-tui
+        env:
+          AWS_LC_SYS_NO_ASM: 1
         cargo build --release --target aarch64-pc-windows-msvc
 
     # ==========================

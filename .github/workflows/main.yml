@@ -28,18 +28,24 @@ jobs:
     - name: Add Rust target for Windows ARM64
       run: rustup target add aarch64-pc-windows-msvc
 
+    # ==========================
+    # 获取源项目最新 tag（PowerShell 兼容 Windows runner）
+    # ==========================
     - name: Get latest tag from source repo
       id: latest_tag
+      shell: pwsh
       run: |
-        echo "Fetching latest tag from https://github.com/${{ env.SRC_REPO }}.git"
         git init src
-        cd src
+        Set-Location src
         git remote add origin https://github.com/${{ env.SRC_REPO }}.git
         git fetch --tags --quiet
-        LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
-        echo "Latest tag: $LATEST_TAG"
-        echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+        $latest_tag = git tag --sort=-creatordate | Select-Object -First 1
+        Write-Host "Latest tag: $latest_tag"
+        echo "LATEST_TAG=$latest_tag" >> $env:GITHUB_ENV
 
+    # ==========================
+    # 检查 release 是否已存在
+    # ==========================
     - name: Check if release already exists
       id: check_release
       uses: actions/github-script@v7
@@ -62,36 +68,73 @@ jobs:
       if: steps.check_release.outputs.skip == 'true'
       run: exit 0
 
+    # ==========================
+    # Checkout 源代码
+    # ==========================
     - name: Checkout source repo at latest tag
-      run: |
-        git clone --branch $LATEST_TAG https://github.com/${{ env.SRC_REPO }}.git deepseek-tui
+      run: git clone --branch $env:LATEST_TAG https://github.com/${{ env.SRC_REPO }}.git deepseek-tui
+      shell: pwsh
+
+    # ==========================
+    # 缓存 LLVM
+    # ==========================
+    - name: Cache LLVM
+      uses: actions/cache@v3
+      with:
+        path: llvm
+        key: llvm-${{ env.LLVM_VERSION }}
 
     - name: Download LLVM prebuilt for Windows ARM64
+      if: steps.cache.outputs.cache-hit != 'true'
+      shell: pwsh
       run: |
         Invoke-WebRequest -Uri https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/clang+llvm-${{ env.LLVM_VERSION }}-aarch64-pc-windows-msvc.zip -OutFile llvm.zip
         Expand-Archive llvm.zip -DestinationPath llvm
-        echo "LLVM_PATH=$(Resolve-Path llvm\clang+llvm-${{ env.LLVM_VERSION }}-aarch64-pc-windows-msvc\bin)" >> $env:GITHUB_ENV
 
-    - name: Install Windows 11 SDK
-      run: choco install windows-sdk-10-version-22621-all -y
-      shell: powershell
-
-    - name: Configure environment
-      run: set PATH=%LLVM_PATH%;%PATH%
-      shell: cmd
-
-    - name: Build Deepseek-TUI exe
+    - name: Add LLVM to PATH
+      shell: pwsh
       run: |
-        cd deepseek-tui
+        $LLVM_BIN = Resolve-Path "llvm\clang+llvm-${{ env.LLVM_VERSION }}-aarch64-pc-windows-msvc\bin"
+        echo "LLVM_PATH=$LLVM_BIN" >> $env:GITHUB_ENV
+        $env:PATH = "$LLVM_BIN;$env:PATH"
+
+    # ==========================
+    # Windows SDK 安装
+    # ==========================
+    - name: Install Windows 11 SDK
+      shell: powershell
+      run: choco install windows-sdk-10-version-22621-all -y
+
+    # ==========================
+    # 缓存 Rust/Cargo
+    # ==========================
+    - name: Cache Rust dependencies
+      uses: actions/cache@v3
+      with:
+        path: |
+          **/target
+          ~/.cargo/registry
+          ~/.cargo/git
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+    # ==========================
+    # 构建 exe
+    # ==========================
+    - name: Build Deepseek-TUI exe
+      shell: pwsh
+      run: |
+        Set-Location deepseek-tui
         cargo build --release --target aarch64-pc-windows-msvc
-      shell: cmd
 
     - name: Prepare artifacts
+      shell: pwsh
       run: |
         mkdir release
-        copy deepseek-tui\target\aarch64-pc-windows-msvc\release\deepseek-tui.exe release\
-      shell: cmd
+        Copy-Item deepseek-tui\target\aarch64-pc-windows-msvc\release\deepseek-tui.exe release\
 
+    # ==========================
+    # 发布 release
+    # ==========================
     - name: Create GitHub Release
       id: create_release
       uses: actions/create-release@v1

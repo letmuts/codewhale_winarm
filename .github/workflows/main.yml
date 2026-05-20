@@ -41,7 +41,6 @@ jobs:
         LATEST_TAG=$(git tag --sort=-creatordate | head -n1)
         echo "Latest tag: $LATEST_TAG"
         echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
-
     # ==========================
     # 检查 release 是否已存在
     # ==========================
@@ -62,7 +61,6 @@ jobs:
           } else {
             core.setOutput('skip', 'false');
           }
-
     - name: Stop if release exists
       if: steps.check_release.outputs.skip == 'true'
       run: exit 0
@@ -86,12 +84,11 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     # ==========================
-    # 安装交叉编译工具链
+    # 安装交叉编译工具链（修正版）
     # ==========================
     - name: Install cross compile tools
       run: |
-        sudo dpkg --add-architecture arm64
-        sudo apt update
+        # 不再添加 arm64 架构，直接安装原生 amd64 的交叉工具包
         sudo apt install -y gcc-aarch64-linux-gnu mingw-w64
 
     # ==========================
@@ -100,8 +97,6 @@ jobs:
     - name: Build Deepseek-TUI exe
       run: |
         cd deepseek-tui
-        # 使用 MSVC 目标需要 x86_64-w64-mingw32 兼容或者交叉链配置
-        # 这里使用 Rust 内置 cross 编译
         cargo build --release --target aarch64-pc-windows-msvc
 
     # ==========================

@@ -1,0 +1,115 @@
+name: Auto Build and Release Deepseek-TUI Windows ARM64
+
+on:
+  schedule:
+    - cron: '0 0 * * *'  # 每天 0 点运行
+  workflow_dispatch:     # 可手动触发
+
+jobs:
+  build-win-arm:
+    runs-on: windows-latest
+    env:
+      SRC_REPO: Hmbown/DeepSeek-TUI
+      RELEASE_REPO: sakuraflows/deepseek-tui_winarm
+      LLVM_VERSION: 22.1.6
+      SDK_VERSION: 10.0.22621.0
+
+    steps:
+    - name: Checkout self repo
+      uses: actions/checkout@v3
+
+    - name: Setup Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: stable
+        profile: minimal
+        override: true
+
+    - name: Add Rust target for Windows ARM64
+      run: rustup target add aarch64-pc-windows-msvc
+
+    - name: Get latest tag from source repo
+      id: latest_tag
+      run: |
+        echo "Fetching latest tag from https://github.com/${{ env.SRC_REPO }}.git"
+        git init src
+        cd src
+        git remote add origin https://github.com/${{ env.SRC_REPO }}.git
+        git fetch --tags --quiet
+        LATEST_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+        echo "Latest tag: $LATEST_TAG"
+        echo "LATEST_TAG=$LATEST_TAG" >> $GITHUB_ENV
+
+    - name: Check if release already exists
+      id: check_release
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const releases = await github.rest.repos.listReleases({
+            owner: 'sakuraflows',
+            repo: 'deepseek-tui_winarm',
+          });
+          const exists = releases.data.some(r => r.tag_name === process.env.LATEST_TAG);
+          if (exists) {
+            core.info(`Release with tag ${process.env.LATEST_TAG} already exists. Skipping build.`);
+            core.setOutput('skip', 'true');
+          } else {
+            core.setOutput('skip', 'false');
+          }
+
+    - name: Stop if release exists
+      if: steps.check_release.outputs.skip == 'true'
+      run: exit 0
+
+    - name: Checkout source repo at latest tag
+      run: |
+        git clone --branch $LATEST_TAG https://github.com/${{ env.SRC_REPO }}.git deepseek-tui
+
+    - name: Download LLVM prebuilt for Windows ARM64
+      run: |
+        Invoke-WebRequest -Uri https://github.com/llvm/llvm-project/releases/download/llvmorg-${{ env.LLVM_VERSION }}/clang+llvm-${{ env.LLVM_VERSION }}-aarch64-pc-windows-msvc.zip -OutFile llvm.zip
+        Expand-Archive llvm.zip -DestinationPath llvm
+        echo "LLVM_PATH=$(Resolve-Path llvm\clang+llvm-${{ env.LLVM_VERSION }}-aarch64-pc-windows-msvc\bin)" >> $env:GITHUB_ENV
+
+    - name: Install Windows 11 SDK
+      run: choco install windows-sdk-10-version-22621-all -y
+      shell: powershell
+
+    - name: Configure environment
+      run: set PATH=%LLVM_PATH%;%PATH%
+      shell: cmd
+
+    - name: Build Deepseek-TUI exe
+      run: |
+        cd deepseek-tui
+        cargo build --release --target aarch64-pc-windows-msvc
+      shell: cmd
+
+    - name: Prepare artifacts
+      run: |
+        mkdir release
+        copy deepseek-tui\target\aarch64-pc-windows-msvc\release\deepseek-tui.exe release\
+      shell: cmd
+
+    - name: Create GitHub Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ env.LATEST_TAG }}
+        release_name: ${{ env.LATEST_TAG }}
+        draft: false
+        prerelease: false
+        repository: sakuraflows/deepseek-tui_winarm
+
+    - name: Upload Release Asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: release/deepseek-tui.exe
+        asset_name: deepseek-tui.exe
+        asset_content_type: application/octet-stream

@@ -2,11 +2,12 @@
 deepseek-tui build release on windows on arm
 
 ### 源项目：[Deepseek-TUI](https://github.com/Hmbown/DeepSeek-TUI)
-
-
+### 下载编译好的程序:
+https://github.com/sakuraflows/deepseek-tui_winarm/releases
 ### 编译与构建流程
 
 **方法1**
+
 准备:
 - 下载并安装rust
 - 从源项目下载仓库到本地。
@@ -18,9 +19,12 @@ deepseek-tui build release on windows on arm
 - 适用于Windows的C++Clang 编译器
 - Windows 11 SDK
 
-二,
-执行`cd <your code path>`
+<br>
+<br>
 
-`cargo build --release`
+方法2:
+- 下载并安装rust
+- 从源项目下载仓库到本地。
+- 在llvm下载:`clang+llvm-22.1.6-aarch64-pc-windows-msvc.tar`,使用其中的c++clang进行构建编译.
 
--
+

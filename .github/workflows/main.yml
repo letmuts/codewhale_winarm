@@ -95,10 +95,10 @@ jobs:
     # 构建 Windows ARM64 exe
     # ==========================
     - name: Build Deepseek-TUI exe
+      env:
+        AWS_LC_SYS_NO_ASM: 1
       run: |
         cd deepseek-tui
-        env:
-          AWS_LC_SYS_NO_ASM: 1
         cargo build --release --target aarch64-pc-windows-msvc
 
     # ==========================

@@ -11,7 +11,7 @@ jobs:
     env:
       SRC_REPO: Hmbown/DeepSeek-TUI
       RELEASE_REPO: sakuraflows/deepseek-tui_winarm
-      LLVM_VERSION: 22.1.6
+      LLVM_VERSION: 22.1.6   # 可忽略，本脚本不再使用 LLVM
 
     steps:
     - name: Checkout self repo
@@ -24,8 +24,8 @@ jobs:
         profile: minimal
         override: true
 
-    - name: Add Rust target for Windows ARM64
-      run: rustup target add aarch64-pc-windows-msvc
+    - name: Add Rust target for Windows ARM64 (GNU ABI)
+      run: rustup target add aarch64-pc-windows-gnu
 
     # ==========================
     # 获取源项目最新 tag
@@ -84,22 +84,22 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
 
     # ==========================
-    # 安装交叉编译工具链（修正版）
+    # 安装 mingw-w64 交叉编译器 (用于 aarch64-windows-gnu)
     # ==========================
-    - name: Install cross compile tools
+    - name: Install mingw-w64 for Windows ARM64
       run: |
-        # 不再添加 arm64 架构，直接安装原生 amd64 的交叉工具包
-        sudo apt install -y gcc-aarch64-linux-gnu mingw-w64
+        sudo apt install -y gcc-mingw-w64-aarch64 g++-mingw-w64-aarch64
 
     # ==========================
-    # 构建 Windows ARM64 exe
+    # 构建 Windows ARM64 exe (GNU ABI)
     # ==========================
     - name: Build Deepseek-TUI exe
       env:
         AWS_LC_SYS_NO_ASM: 1
+        CARGO_TARGET_AARCH64_PC_WINDOWS_GNU_LINKER: aarch64-w64-mingw32-gcc
       run: |
         cd deepseek-tui
-        cargo build --release --target aarch64-pc-windows-msvc
+        cargo build --release --target aarch64-pc-windows-gnu
 
     # ==========================
     # 准备 artifacts
@@ -107,7 +107,7 @@ jobs:
     - name: Prepare artifacts
       run: |
         mkdir release
-        cp deepseek-tui/target/aarch64-pc-windows-msvc/release/deepseek-tui.exe release/
+        cp deepseek-tui/target/aarch64-pc-windows-gnu/release/deepseek-tui.exe release/
 
     # ==========================
     # 创建 GitHub Release

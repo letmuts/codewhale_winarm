@@ -1,5 +1,9 @@
-# deepseek-tui_winarm
-deepseek-tui build release on windows on arm
+# deepseek-tui_winarm：DeepSeek TUI – Unofficial Build for Windows on Arm (ARM64)
+DeepSeek TUI – Unofficial Build for Windows on Arm (ARM64)
+
+DeepSeek TUI 的 Windows on Arm (ARM64) 非官方编译版
+
+由于官方暂时没有提供 Windows on Arm 的编译二进制包，我为 DeepSeek TUI 手动编译了一个 ARM64 版本，方便在Windows ARM 设备上原生运行DeepSeek-TUI。
 
 ### 源项目：[Deepseek-TUI](https://github.com/Hmbown/DeepSeek-TUI)
 ### 下载编译好的程序:

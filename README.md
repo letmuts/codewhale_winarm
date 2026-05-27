@@ -1,11 +1,11 @@
-# deepseek-tui_winarm：DeepSeek TUI – Unofficial Build for Windows on Arm (ARM64)
-DeepSeek TUI – Unofficial Build for Windows on Arm (ARM64)
+# deepseek-tui_winarm：CodeWhale（Deepseek TUI） Unofficial Build for Windows on Arm (ARM64)
+CodeWhale（DeepSeek TUI） Unofficial Build for Windows on Arm (ARM64)
 
-DeepSeek TUI 的 Windows on Arm (ARM64) 非官方编译版
+CodeWhale（原DeepSeek TUI） 的 Windows on Arm (ARM64) 非官方编译版
 
-由于官方暂时没有提供 Windows on Arm 的编译二进制包，我为 DeepSeek TUI 手动编译了一个 ARM64 版本，方便在Windows ARM 设备上原生运行DeepSeek-TUI。
+由于官方暂时没有提供 Windows on Arm 的编译二进制包，我为 CodeWhale 手动编译了一个 ARM64 版本，方便在Windows ARM 设备上原生运行CodeWhale。
 
-### 源项目：[Deepseek-TUI](https://github.com/Hmbown/DeepSeek-TUI)
+### 源项目：[CodeWhale](https://github.com/Hmbown/DeepSeek-TUI)，官网：[CodeWhale](https://codewhale.net)
 ### 下载编译好的程序:
 https://github.com/sakuraflows/deepseek-tui_winarm/releases
 ## 编译与构建流程
@@ -14,7 +14,7 @@ https://github.com/sakuraflows/deepseek-tui_winarm/releases
 此方案较简单,但安装的依赖较多.
 
 首先要下载如下内容:
-- [deepseek-tui](https://github.com/Hmbown/DeepSeek-TUI)
+- [CodeWhale](https://github.com/Hmbown/CodeWhale)
 - 下载并安装rust
 - 下载visual studio installer
 
@@ -24,9 +24,9 @@ https://github.com/sakuraflows/deepseek-tui_winarm/releases
 - 适用于Windows的C++Clang 编译器
 - Windows 11 SDK
 
-cd到你下载的deepseek-tui源码路径,然后执行`cargo build --release`,输出的编译结果会提示你编译好的exe所在的路径.
+cd到你下载的codewhale源码路径,然后执行`cargo build --release`,输出的编译结果会提示你编译好的exe所在的路径.
 
-或者你直接运行`cargo install deepseek-tui`也可以,cargo会为你配置一切,这样做你就可以直接打开powershell执行`deepseek`就可以使用了.
+或者你直接运行`cargo install codewhale`也可以,cargo会为你配置一切,这样做你就可以直接打开powershell执行`codewhale`(也可以用旧版指令`deepseek`)就可以使用了.
 
 
 #### 方法二：单独安装 LLVM（包含 clang-cl）
@@ -45,12 +45,12 @@ $env:CXX = "C:\Users\fulde\projects\deepseek-tui\llvm\bin\clang-cl.exe"
 $env:PATH = "C:\Users\fulde\projects\deepseek-tui\llvm\bin;$env:PATH"  # 可选，方便 clang-cl 被调用
 ```
 
-执行:`cargo clean`和`cargo install`
+执行:`cargo clean`和`cargo install codewhale`
 
 <br>
 <br>
 
-或者可以先克隆[deepseektui](https://github.com/Hmbown/DeepSeek-TUI)源代码,cd到下载目录,执行`cargo build --release`.
+2.或者可以先克隆[codewhale](https://github.com/Hmbown/codewhale)源代码,cd到下载目录,执行`cargo build --release`.
 
 完成.
 

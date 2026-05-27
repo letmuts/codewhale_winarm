@@ -1,4 +1,4 @@
-# deepseek-tui_winarm：CodeWhale（Deepseek TUI） Unofficial Build for Windows on Arm (ARM64)
+# codewhale_winarm：CodeWhale（Deepseek TUI） Unofficial Build for Windows on Arm (ARM64)
 CodeWhale（DeepSeek TUI） Unofficial Build for Windows on Arm (ARM64)
 
 CodeWhale（原DeepSeek TUI） 的 Windows on Arm (ARM64) 非官方编译版

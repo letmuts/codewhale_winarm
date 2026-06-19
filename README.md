@@ -7,7 +7,7 @@ CodeWhale（原DeepSeek TUI） 的 Windows on Arm (ARM64) 非官方编译版
 
 ### 源项目：[CodeWhale](https://github.com/Hmbown/DeepSeek-TUI)，官网：[CodeWhale](https://codewhale.net)
 ### 下载编译好的程序:
-https://github.com/sakuraflows/codewhale_winarm/releases
+https://github.com/letmuts/codewhale_winarm/releases
 ## 编译与构建流程
 无论使用哪种方案，都要安装rust
 #### 方案一:Visual Studio Installer 添加组件

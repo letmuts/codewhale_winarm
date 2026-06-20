@@ -10,7 +10,7 @@ CodeWhale（原DeepSeek TUI） 的 Windows on Arm (ARM64) 非官方编译版
 https://github.com/letmuts/codewhale_winarm/releases
 ## 编译与构建流程
 无论使用哪种方案，都要安装rust
-#### 方案一:Visual Studio Installer 添加组件
+#### 方案一:Visual Studio Installer 添加需要的构建依赖
 此方案较简单,但安装的依赖较多.
 
 首先要下载如下内容:
@@ -28,6 +28,9 @@ cd到你下载的codewhale源码路径,然后执行`cargo build --release`,输�
 
 或者你直接运行`cargo install codewhale`也可以,cargo会为你配置一切,这样做你就可以直接打开powershell执行`codewhale`(也可以用旧版指令`deepseek`)就可以使用了.
 
+如果在更新完rust工具链后发现系统无法检测到clang依赖，可以执行如下命令。将clang的路径临时添加为环境变量（注意命令中的路径是你设备中llvm中的实际的路径）：
+
+`$env:PATH += ";C:\Program Files\Microsoft Visual Studio\18\Community\VC\Tools\Llvm\bin"`
 
 #### 方法二：单独安装 LLVM（包含 clang-cl）
 此方案较复杂,但此方案使用的是开源工具链,编译出的二进制可以应用于商业环境中,而不必担心通过微软visualstudioinstaller安装build tools造成的可能侵权的问题.(当然你前期配置rust环境也要使用gun工具链)
